@@ -1,0 +1,63 @@
+version: '3.1'
+services:
+
+  srvapp:
+    build:
+      # context: ./app
+      context: ./app
+      dockerfile: Dockerfile
+    image: ywemay/lshop-app
+    container_name: lshop-app
+    ports:
+      - 9528:9528
+    volumes:
+      - ./app:/home/node/app
+    # command: "npm run dev"
+    # command: "http-server dist"
+    links:
+      - srvapi
+    environment:
+      API_LINK: 'http://srvapi:3000'
+
+  srvapi:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    image: ywemay/lshop-api
+    container_name: lshop-api
+    ports:
+      - 3000:3000
+    volumes:
+      - ./api:/home/node/app
+    links:
+      - mongosrv
+    environment:
+      DB_LINK: 'mongodb://someusername:SoM3s3cur3paSS@mongosrv:27017/lshop'
+      JWT_KEY: "OJB7Ggghsld90hshhd7xf5dgklhaf430394jlsdf04"
+
+  mongosrv:
+    image: mongo:4.4
+    restart: always
+    container_name: lshop-mongo
+    environment:
+      MONGO_INITDB_DATABASE: 'lshop'
+      MONGO_INITDB_ROOT_USERNAME: 'someusername'
+      MONGO_INITDB_ROOT_PASSWORD: 'somepassword'
+    volumes:
+      - ./init-db/init-mongo.js:/docker-entrypoint-initdb.d/init.js:ro
+      - ./data:/data/db
+    ports:
+      - 27017:27017
+
+  # mongo-express:
+  #   image: mongo-express
+  #   restart: always
+  #   depends_on:
+  #       - mongosrv
+  #   ports:
+  #     - 8081:8081
+  #   environment:
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: someusername
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: SoM3s3cur3paSS
+  #     ME_CONFIG_MONGODB_PORT: 27017
+  #     ME_CONFIG_MONGODB_SERVER: mongosrv
